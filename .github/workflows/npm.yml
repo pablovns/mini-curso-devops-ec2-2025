@@ -1,0 +1,70 @@
+name: projeto devops
+
+on:
+  push: 
+    branches:
+      - main 
+  # pull_request:
+  #   branches:
+  #     - main 
+      
+  # release:
+  #   types: [created]
+env:
+  NODE_VERSION: '20'
+  
+# https://github.com/marketplace?type=actions
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Download Repo
+        uses: actions/checkout@v4
+
+      - name: Prepara S.O para Node
+        uses: actions/setup-node@v4
+        with:
+          node-version: ${{ env.NODE_VERSION}}
+
+      - name: Ajuste path e Adiciona Files
+        run: | 
+          pwd && ls -alh 
+          cd mcd-ec2
+          cat << EOF >> vite.config.js
+          import { defineConfig } from 'vite'
+          // https://vitejs.dev/config/
+          export default defineConfig({
+          // Adicione esta linha:
+          base: '/mcd-ec2/', 
+          } )
+          EOF
+          ls -alh
+      - name: Instala dependencias e Build
+        run: |
+          pwd && ls -alh  
+          cd mcd-ec2         
+          npm install
+          npm run build
+      - name: Fazer o Upload do codigo
+        uses: actions/upload-artifact@v4
+        with: 
+          name: dist-files
+          path: mcd-ec2/dist
+
+
+  deploy:
+    runs-on: ubuntu-latest
+    needs: build
+    steps:
+      - name: Download do Arquivos 
+        uses: actions/download-artifact@v4
+        with: 
+          name: dist-files
+          path: dist
+      - name: Enviar arquivos para Server 
+        run: | 
+          ls -alh 
+          mkdir -p ~/.ssh
+          echo "${{ secrets.KOEHLERLABS_KEY_PROD }}" > ~/.ssh/koehlerlabs-key-prod.pem
+          chmod 600 ~/.ssh/koehlerlabs-key-prod.pem
+          scp -i ~/.ssh/koehlerlabs-key-prod.pem  -o StrictHostKeyChecking=no -r dist/* ubuntu@ec2-54-221-25-237.compute-1.amazonaws.com:/var/www/html/mcd-ec2
