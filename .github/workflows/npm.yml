@@ -29,27 +29,27 @@ jobs:
       - name: Ajuste path e Adiciona Files
         run: | 
           pwd && ls -alh 
-          cd mcd-ec2
+          cd mini-curso-devops
           cat << EOF >> vite.config.js
           import { defineConfig } from 'vite'
           // https://vitejs.dev/config/
           export default defineConfig({
           // Adicione esta linha:
-          base: '/mcd-ec2/', 
+          base: '/mini-curso-devops/', 
           } )
           EOF
           ls -alh
       - name: Instala dependencias e Build
         run: |
           pwd && ls -alh  
-          cd mcd-ec2         
+          cd mini-curso-devops         
           npm install
           npm run build
       - name: Fazer o Upload do codigo
         uses: actions/upload-artifact@v4
         with: 
           name: dist-files
-          path: mcd-ec2/dist
+          path: mini-curso-devops/dist
 
 
   deploy:
